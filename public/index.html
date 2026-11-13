@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>自动压缩工具</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="window-titlebar" aria-label="窗口拖动区域"></div>
+
+  <main>
+    <div class="notification"><div id="notice" role="alert" hidden></div><button id="btn-dismiss-notice" class="secondary" type="button" aria-label="关闭提示">关闭提示</button></div>
+    <div class="workspace">
+      <div class="workspace-column setup-column" aria-label="文件与任务" tabindex="0">
+    <section class="card" id="file-drop-zone">
+      <div class="file-toolbar"><div><h2>待压缩文件 <span id="input-count" class="count-pill">0</span></h2><p class="muted">将选中的内容合并为一个加密压缩包</p></div>
+        <button id="btn-browse-add" type="button">＋ 添加文件</button></div>
+      <div id="drop-hint" class="drop-hint">
+        <div class="drop-symbol" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none"><path d="M6 14a4 4 0 0 1 4-4h10l4 5h14a4 4 0 0 1 4 4v17a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4V14Z" stroke="currentColor" stroke-width="2"/><path d="M24 33V22m-5 5 5-5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <strong>把文件或文件夹拖到这里</strong><span>支持多选，自动读取文件夹中的内容</span>
+      </div>
+      <div class="file-list-heading"><span>已添加的内容</span><button id="btn-clear-files" type="button" class="text-button">清空列表</button></div>
+      <ul id="added-paths" class="path-list"></ul>
+      <div id="file-empty" class="file-empty">还没有添加内容，拖入文件或点击右上方添加</div>
+      <details class="paste-paths">
+        <summary>通过路径添加</summary>
+      <textarea id="path-input" rows="2" placeholder="也可以直接粘贴路径，每行一个文件或文件夹，然后点击“加入列表”"></textarea>
+      <div class="row">
+        <button id="btn-add-pasted" type="button" class="secondary">加入列表</button>
+      </div>
+      </details>
+      <div id="scan-summary" class="summary">尚未添加文件</div>
+      <div id="scan-errors" class="warnings"></div>
+      <details id="file-details" hidden>
+        <summary>查看全部文件</summary>
+        <div class="file-table-wrap">
+          <table id="file-table">
+            <thead><tr><th>文件路径</th><th class="num">大小</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+<div class="task-record">
+    <section class="card" id="task-status-card">
+      <h2>当前任务 <span class="section-note">进度与校验</span></h2>
+      <div class="row">
+        <span id="task-phase" class="badge idle">等待</span>
+        <div class="progress grow" role="progressbar" aria-label="当前阶段进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="progress-bar"></div></div>
+        <span id="progress-text">0%</span>
+      </div>
+      <div class="row"><span id="task-time" class="hint"></span><span id="connection-status" role="status" class="warnings"></span></div>
+      <details id="task-log-details"><summary>查看运行日志</summary><pre id="task-log" class="log">暂无任务</pre></details>
+    </section>
+    <section class="card result-card">
+      <h2>处理结果</h2>
+      <div id="result-panel" class="result-panel">
+        <div class="summary">压缩完成后，输出文件和校验结果会显示在这里。</div>
+      </div>
+    </section>
+</div>
+      </div>
+      <div class="workspace-column task-column" aria-label="压缩设置" tabindex="0">
+    <section class="card" id="output-settings">
+      <h2>压缩设置 <span class="format-badge">7Z</span></h2>
+      <div class="row">
+        <label for="archive-name">压缩包名称</label>
+        <div class="name-input grow"><input id="archive-name" type="text" value="archive" placeholder="输入压缩包名称"><span>.7z</span></div>
+      </div>
+      <div class="name-suggestions" aria-label="压缩包名称候选">
+        <div class="hint">建议名称 · 点击使用</div>
+        <div id="name-tags"><span class="hint">添加文件或文件夹后显示候选名称</span></div>
+      </div>
+      <div class="row">
+        <label for="output-dir">输出目录</label>
+        <input id="output-dir" type="text" class="grow" placeholder="选择压缩包输出目录">
+        <button id="btn-browse-output" type="button" class="secondary">浏览…</button>
+      </div>
+      <div class="row">
+        <label for="password">压缩密码</label>
+        <input id="password" type="password" class="grow" autocomplete="off" placeholder="AES-256 加密 + 文件名加密">
+        <label class="checkbox"><input id="show-password" type="checkbox">显示</label>
+      </div>
+      <div class="row">
+        <label class="checkbox"><input id="auto-test" type="checkbox" checked>完成后自动校验压缩包</label>
+      </div>
+      <div class="settings-footer"><details><summary>更多设置</summary>
+        <label class="field-label" for="engine-path">7-Zip 引擎路径</label><input id="engine-path" type="text" placeholder="留空自动探测">
+        <p class="note">密码以明文保存在本机配置文件中。修改密码仅影响新任务。</p>
+      </details><button id="btn-save-config" type="button" class="text-button">保存设置</button></div>
+      <span id="config-save-status" class="hint" role="status"></span>
+    </section>
+    <section class="card" id="volume-controller">
+      <h2>分卷 <span class="section-note">按文件大小自动建议</span></h2>
+      <div class="volume-stats">
+        <div><span class="hint">文件总大小</span><strong id="volume-total">尚未添加文件</strong></div>
+        <div><span class="hint">自动建议</span><strong id="volume-recommendation">等待统计</strong></div>
+        <div><span class="hint">每卷大小</span><strong id="volume-capacity">—</strong></div>
+      </div>
+      <div class="row">
+        <label for="volume-count">计划卷数</label>
+        <div class="volume-stepper">
+          <button id="btn-volume-less" type="button" class="secondary" aria-label="减少一卷" disabled>−</button>
+          <input id="volume-count" type="number" min="2" max="10000" step="1" placeholder="自动" disabled>
+          <button id="btn-volume-more" type="button" class="secondary" aria-label="增加一卷" disabled>＋</button>
+        </div>
+        <button id="btn-volume-auto" type="button" class="secondary">恢复自动</button>
+      </div>
+      <p class="note">最终卷数受压缩率影响，至少保留 2 卷。</p>
+      <details>
+        <summary>详细分卷设置</summary>
+      <div id="volume-plan" class="summary" role="status">添加文件后显示自动计算的分卷方案</div>
+        <div class="row">
+          <label for="volume-override">每卷容量（MB）</label>
+          <input id="volume-override" type="number" min="1" step="1" placeholder="留空 = 自动阶梯">
+          <span class="hint">按卷数调整时优先使用计算出的容量</span>
+        </div>
+      </details>
+    </section>
+    <section class="card action-card">
+      <div class="action-buttons">
+      <button id="btn-start" type="button" class="primary">开始压缩</button>
+      <button id="btn-cancel" type="button" class="secondary" hidden>取消任务</button>
+      </div>
+      <span id="start-hint" class="hint">7z 加密 · 隐藏文件名 · 保留源文件</span>
+    </section>
+    <section class="card manual-test-card">
+      <details id="manual-test-details"><summary>测试已有压缩包</summary>
+      <div class="row">
+        <label for="test-archive">压缩包路径</label>
+        <input id="test-archive" type="text" class="grow" placeholder="例如 X:\output\archive.7z.001（整套分卷须在同一目录）">
+      </div>
+      <div class="row">
+        <label for="test-password">测试密码</label>
+        <input id="test-password" type="password" class="grow" autocomplete="off" placeholder="留空使用当前保存的密码">
+        <button id="btn-manual-test" type="button">执行完整性测试</button>
+      </div>
+      <p class="note">测试从首卷读取整套分卷，验证可读取、可解密、可校验；不会删除或修改任何文件。</p>
+    </details>
+    </section>
+      </div>
+    </div>
+  </main>
+  <footer class="app-footer"><span>本地处理，无需上传文件</span><div id="engine-status" class="engine-status checking">正在检测引擎…</div><span class="app-version">v1.0.0</span></footer>
+
+  <div id="browse-modal" class="modal" hidden>
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="browse-title">
+      <div class="modal-head">
+        <strong id="browse-title">选择文件或文件夹</strong>
+        <button id="btn-browse-close" type="button" class="secondary">关闭</button>
+      </div>
+      <div class="row">
+        <button id="btn-browse-up" type="button" class="secondary">↑ 上级目录</button>
+        <span id="browse-current" class="hint grow"></span>
+      </div>
+      <div id="browse-list" class="browse-list"></div>
+      <div class="modal-foot">
+        <span id="browse-selected-count" class="hint">已选 0 项</span>
+        <button id="btn-browse-confirm" type="button">添加所选</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="name-suggestions.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+appId: com.local.autocompress
+productName: 自动压缩工具
+copyright: 本地工具
+directories:
+  output: release
+  buildResources: buildResources
+files:
+  - dist/**
+  - electron/**
+  - package.json
+extraResources:
+  - from: public
+    to: public
+  - from: vendor
+    to: engine
+    filter:
+      - 7z.exe
+      - 7z.dll
+      - License.txt
+  - from: buildResources/icon.png
+    to: icon.png
+asar: true
+win:
+  target:
+    - nsis
+    - portable
+  icon: buildResources/icon.png
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: 自动压缩工具
+  artifactName: AutoCompress-Setup-${version}.${ext}
+portable:
+  artifactName: AutoCompress-Portable-${version}.${ext}

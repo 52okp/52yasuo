@@ -1,0 +1,12 @@
+node_modules/
+dist/
+output/
+release/
+config.json
+*.log
+.vitest/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
